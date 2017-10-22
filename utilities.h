@@ -152,7 +152,20 @@ void calculate_bin_size(vector <vector<int> > &bins, int *nnz_row, int m)
 {
 	for(int i = 0; i < m; i++)
 	{
-		bins[nnz_row[i]].push_back(i);
+		int x = nnz_row[i], cnt = 0;
+
+		while(true)
+		{
+			if(pow(2,cnt) >= x)
+			{
+				break;
+			}
+			cnt++;
+		}
+		if(x == 1)
+			cnt = 1;
+
+		bins[cnt].push_back(i);
 		cout<<nnz_row[i]<<" "<<i<<endl;
 	}
 }

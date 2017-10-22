@@ -7,7 +7,8 @@ using namespace std;
 
 
 
-__global__ void spmv(float *values, int *col_idx, int *row_off,float * vect, float res[], int m, int n, int *bin, int bin_size,int bin_row_len)
+__global__ void spmv(float *values, int *col_idx, int *row_off,float * vect,\
+ float res[], int m, int n, int *bin, int bin_size,int bin_row_len, int nnz)
 {
 	int tid = threadIdx.x;
 	int lid = tid%32;
@@ -15,17 +16,24 @@ __global__ void spmv(float *values, int *col_idx, int *row_off,float * vect, flo
 	float sum = 0;
 	int row = bin[lid];
 	int row_idx = row_off[row];
-	int next_row_idx = row_off[row+1];
+	int next_row_idx;
+	if(row < (m-1))
+		next_row_idx = row_off[row+1];
+	else
+		next_row_idx = nnz;
+
+		printf("\nblockid = %d, threadid = %d,row = %d, row_idx = %d, next_row_idx = %d \n",blockIdx.x, tid, row, row_idx, next_row_idx);
 
 	for(int i = row_idx + vid; i < next_row_idx; i+= 1<<(bin_row_len - 1))
 	{
 		sum += values[i] * vect[col_idx[i]];
+		printf("\nblockid = %d, threadid = %d,value = %f, vect = %f \n",blockIdx.x, tid, values[i], vect[col_idx[i]]);
 	} 
 
-	for(int i = bin_size; i > 0; i--)
+	for(int i = bin_row_len; i > 0; i--)
 		sum += __shfl_down(sum,i);
 
-	//printf("sum = ");
+	
 
 	if(vid == 0)
 		res[row] += sum;
@@ -141,12 +149,12 @@ int main()
 
 			cudaMemcpy(dbin, arr, (bins[i].size())*sizeof(int), cudaMemcpyHostToDevice);
 
-			int dimBlock = (1 << (i - 1)) * bins[i].size() ;
-			cout<<"No of threads: "<<dimBlock<<endl;
-			//dim3 dimGrid(bins[i].size());
+			int dimBlock = (1 << (i - 1)) ;
+			cout<<"No of threads: "<<dimBlock*bins[i].size()<<endl;
+			dim3 dimGrid(bins[i].size());
 			cout<<"Executing Kernel: ";
 			cudaEventRecord(start);
-			spmv<<<1,dimBlock>>>(dvalues, dcol_idx, drow_off, dvect, dres, m, n, dbin, bins[i].size(), i);
+			spmv<<<dimGrid,dimBlock>>>(dvalues, dcol_idx, drow_off, dvect, dres, m, n, dbin, bins[i].size(), i, nnz);
 			cudaEventRecord(stop);
 
 			cudaEventSynchronize(stop);
