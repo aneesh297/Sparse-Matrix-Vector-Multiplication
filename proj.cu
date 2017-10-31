@@ -42,9 +42,9 @@ __global__ void spmv(float *values, int *col_idx, int *row_off,float * vect,\
 
 int main()
 {
-	srand (time(NULL));
-	int m = 5, n = 5;
-	int nnz = 0, nnz_row[m], nnz_max = 0; 
+	srand (time(NULL)); //Set current time as random seed.
+	int m = 5, n = 5; //Matrix dimensions
+	int nnz = 0, nnz_row[m], nnz_max = 0; // nnz -> number of non zeros
 	float *mat[m], *vect, *res;
 	float *values;
 	int *col_idx, *row_off;
@@ -103,6 +103,8 @@ int main()
 
 	int *dcol_idx, *drow_off, *dbin;
 	float *dvect, *dres, *dvalues;
+
+	//Events are used to time operations
 	float milliseconds = 0;
 	cudaEvent_t start, stop;
 	cudaEventCreate(&start);
@@ -110,6 +112,7 @@ int main()
 
 
 
+	//Memory Allocation
 	cout<<"Allocating memory\n";
 	cudaEventRecord(start);
 	cudaMalloc((void**)&dcol_idx, (nnz)*sizeof(int));
@@ -123,7 +126,9 @@ int main()
 	cudaEventElapsedTime(&milliseconds, start, stop);
 	cout<<"Memory Allocation successful: "<<milliseconds<<"ms\n";
 
-	cout<<"Copying memory\n";
+
+	//Copying memory to GPU
+	cout<<"Copying memory to GPU\n";
 	cudaEventRecord(start);
 	cudaMemcpy(dcol_idx, col_idx, (nnz)*sizeof(int), cudaMemcpyHostToDevice);
 	cudaMemcpy(drow_off, row_off, (m)*sizeof(int), cudaMemcpyHostToDevice);
@@ -136,6 +141,8 @@ int main()
 	cudaEventElapsedTime(&milliseconds, start, stop);
 	cout<<"Memory copy complete: "<<milliseconds<<"ms\n";
 
+
+	//ACSR Binning
 	for(int i = 1; i < bins.size(); i++)
 	{
 		if(bins[i].size()>0)
@@ -143,15 +150,17 @@ int main()
 			cout<<"Currently Bin "<<i<<endl;
 			cudaMalloc((void**)&dbin, bins[i].size() * sizeof(int));
 
-			int arr[bins[i].size()];
+			int arr[bins[i].size()]; //Temporary array to store a single bin
 			for(int j = 0; j < bins[i].size();j++)
 				arr[j] = bins[i][j];
 
 			cudaMemcpy(dbin, arr, (bins[i].size())*sizeof(int), cudaMemcpyHostToDevice);
 
-			int dimBlock = (1 << (i - 1)) ;
-			cout<<"No of threads: "<<dimBlock*bins[i].size()<<endl;
+			int dimBlock = (1 << (i - 1)) ; //2^(i-1) threads per block. Not sure if this is correct
+			cout<<"Total No of threads: "<<dimBlock*bins[i].size()<<endl;
 			dim3 dimGrid(bins[i].size());
+
+
 			cout<<"Executing Kernel: ";
 			cudaEventRecord(start);
 			spmv<<<dimGrid,dimBlock>>>(dvalues, dcol_idx, drow_off, dvect, dres, m, n, dbin, bins[i].size(), i, nnz);
@@ -165,6 +174,7 @@ int main()
 		
 	}
 
+	//Copy results into main memory
 	cudaEventRecord(start);
 	cudaMemcpy(res, dres, (n)*sizeof(float), cudaMemcpyDeviceToHost);
 	cudaEventRecord(stop);

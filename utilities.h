@@ -14,6 +14,7 @@ using namespace std;
 
 		float prob = (rand()%10)/10.0;
 
+		//If randomly generated no (b/w 0 and 1) is not greater than 0.7 then matrix cell value is 0.
 		if(prob>=0.7)
 		{
 			arr[j] = rand()%100 + 1;
@@ -122,7 +123,7 @@ void display_csr(float * values, int *col_idx, int *row_off,int nnz,  int m)
 }
 
 
-//Performs simple sparse matrix vector multiplication
+//Performs simple sparse matrix vector multiplication using CSR matrix
 void simple_spmv(float *res, float *vect, float * values, int *col_idx, int *row_off, int nnz, int m,int n)
 {
 	for(int i = 0; i < n; i++)
@@ -148,6 +149,7 @@ void simple_spmv(float *res, float *vect, float * values, int *col_idx, int *row
 	}
 }
 
+//Groups rows into bins. Row of size n is put in bin i where 2^(i-1)< n <= 2^i
 void calculate_bin_size(vector <vector<int> > &bins, int *nnz_row, int m)
 {
 	for(int i = 0; i < m; i++)
