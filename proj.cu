@@ -26,7 +26,7 @@ float blockReduceSum(float val) {
   __syncthreads();              // Wait for all partial reductions
 
   //read from shared memory only if that warp existed
-  val = (threadIdx.x < blockDim.x / warpSize) ? shared[lane] : 0;
+  val = (threadIdx.x < blockDim.x / 32.0) ? shared[lane] : 0;
 
   if (wid==0) val = warpReduceSum(val); //Final reduce within first warp
 
@@ -37,9 +37,6 @@ __global__ void spmv(float * __restrict__ values, int * __restrict__ col_idx, in
  float res[], int  m, int  n, int *  bin, int  bin_size,int  N, int nnz)
 {
 	int tid = threadIdx.x;
-	//__shared__ float rowsum;// = 0;
-	//rowsum = 0;
-	static __shared__ float shared[32];
 	int lid = tid%32;
 	int vid = tid/32;
 	float sum = 0;
@@ -55,20 +52,14 @@ __global__ void spmv(float * __restrict__ values, int * __restrict__ col_idx, in
 		sum += values[i] * vect[col_idx[i]];
 	} 
 
-	//printf("sum1 = %f\n", sum);
 	__syncthreads();
 
-	//sum = warpReduceSum(sum);
-	for (int offset = warpSize/2; offset > 0; offset /= 2) 
-    	sum += __shfl_down(sum, offset);
-	if (lid == 0) shared[vid]=sum;
-	__syncthreads();
-	sum = (threadIdx.x < blockDim.x/32.0) ? shared[lid] : 0;
+	sum = blockReduceSum(sum);
+	
 
-	//printf("%f\n",sum);
 
-	if(vid == 0)
-		atomicAdd(&res[row],sum);
+	if(lid == 0 && vid == 0)
+		res[row] = sum;
 	
 }
 
@@ -185,6 +176,7 @@ int main()
 	cout<<"Memory copy complete: "<<milliseconds<<"ms\n";
 
 	float kernel_time = 0;
+	begin = clock();
 
 	//ACSR Binning
 	for(int i = 1; i < bins.size(); i++)
@@ -218,6 +210,12 @@ int main()
 		}
 		
 	}
+
+	end = clock();
+	elapsed_secs = double(end - begin) / CLOCKS_PER_SEC;
+	
+
+	cout<<"\nTime taken for pll: "<<elapsed_secs*1000<<"\n\n\n";
 
 	float *kres = new float[m];
 
