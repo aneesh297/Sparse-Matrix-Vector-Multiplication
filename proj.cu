@@ -14,7 +14,7 @@ __global__ void spmv(float *values, int *col_idx, int *row_off,float * vect,\
 	int lid = tid%32;
 	int vid = tid/32;
 	float sum = 0;
-	int row = bin[lid];
+	int row = bin[blockIdx.x];
 	int row_idx = row_off[row];
 	int next_row_idx;
 	if(row < (m-1))
@@ -22,12 +22,12 @@ __global__ void spmv(float *values, int *col_idx, int *row_off,float * vect,\
 	else
 		next_row_idx = nnz;
 
-		printf("\nblockid = %d, threadid = %d,row = %d, row_idx = %d, next_row_idx = %d \n",blockIdx.x, tid, row, row_idx, next_row_idx);
+		//printf("\nblockid = %d, threadid = %d,row = %d, row_idx = %d, next_row_idx = %d \n",blockIdx.x, tid, row, row_idx, next_row_idx);
 
-	for(int i = row_idx + vid; i < next_row_idx; i+= 1<<(bin_row_len - 1))
+	for(int i = row_idx + lid; i < next_row_idx; i+= 1<<(bin_row_len - 1))
 	{
 		sum += values[i] * vect[col_idx[i]];
-		printf("\nblockid = %d, threadid = %d,value = %f, vect = %f \n",blockIdx.x, tid, values[i], vect[col_idx[i]]);
+		//printf("\nblockid = %d, threadid = %d,value = %f, vect = %f \n",blockIdx.x, tid, values[i], vect[col_idx[i]]);
 	} 
 
 	for(int i = bin_row_len; i > 0; i--)
@@ -36,7 +36,7 @@ __global__ void spmv(float *values, int *col_idx, int *row_off,float * vect,\
 	
 
 	if(vid == 0)
-		res[row] += sum;
+		atomicAdd(&res[row],sum);// += sum;
 	
 }
 
