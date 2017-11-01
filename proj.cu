@@ -63,42 +63,10 @@ __global__ void spmv(float * __restrict__ values, int * __restrict__ col_idx, in
     	sum += __shfl_down(sum, offset);
 	if (lid == 0) shared[vid]=sum;
 	__syncthreads();
-	sum = shared[lid];//(threadIdx.x < blockDim.x / warpSize) ? shared[lid] : 0;
-	if (vid == 0) {
-		for (int offset = warpSize/2; offset > 0; offset /= 2) 
-    	sum += __shfl_down(sum, offset);
-	}
+	sum = (threadIdx.x < blockDim.x/32.0) ? shared[lid] : 0;
 
-	//printf("Sum = %f\n", sum);
+	//printf("%f\n",sum);
 
-
-	
-	//printf("sum1 = %f\n", sum);
-
-	//for(int i = N; i > 0; i--)
-		//atomicAdd(&rowsum,sum); //+= __shfl_down(sum,i);
-
-	// for(int i = N/2; i > 0; i/=2)
-	// 	if(__shfl_down(sum, i) != sum)
-	// 		sum += __shfl_down(sum, i);
-
-	//sum = warpReduceSum(sum);
-
-	//if (lid == 0) shared[vid]=sum;
-
-	//__syncthreads();   
-
-	//sum = (threadIdx.x < blockDim.x / warpSize) ? shared[lid] : 0;
-
-	//if (vid == 0) sum = warpReduceSum(sum);
-
-	//__syncthreads();
-
-	//printf("sum2 = %f\n", sum);
-
-	//if(lid == 0)
-		//res[row] = rowsum;
-		//atomicAdd(&res[row],sum);// += sum;
 	if(vid == 0)
 		atomicAdd(&res[row],sum);
 	
@@ -159,7 +127,7 @@ int main()
 	cout<<"\nTime taken for sequential: "<<elapsed_secs*1000<<"\n\n\n";
 
 
-	// cout<<"Result vector: \n\t\t";
+	 //cout<<"Result vector: \n\t\t";
 	//display_vector(res, n);
 
 	calculate_bin_size(bins, nnz_row, m);
@@ -259,7 +227,7 @@ int main()
 	cudaEventRecord(stop);
 	cudaEventSynchronize(stop);
 
-	// cout<<"Output Vector: \t\t";
+	 //cout<<"Output Vector: \t\t";
 
 	//display_vector(kres,n);
 
