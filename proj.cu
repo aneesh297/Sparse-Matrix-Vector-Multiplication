@@ -5,16 +5,21 @@
 
 using namespace std;
 
-
-
+__inline__ __device__
+float warpReduceSum(float val) {
+  for (int offset = warpSize/2; offset > 0; offset /= 2) 
+    	val += __shfl_down(val, offset);
+  return val;
+}
 __global__ void spmv(float * __restrict__ values, int * __restrict__ col_idx, int * __restrict__ row_off,float * __restrict__ vect,\
  float res[], int  m, int  n, int *  bin, int  bin_size,int  N, int nnz)
 {
 	int tid = threadIdx.x;
-	__shared__ float rowsum;// = 0;
-	rowsum = 0;
-	//int lid = tid%32;
-	//int vid = tid/32;
+	//__shared__ float rowsum;// = 0;
+	//rowsum = 0;
+	static __shared__ float shared[32];
+	int lid = tid%32;
+	int vid = tid/32;
 	float sum = 0;
 	int row = bin[blockIdx.x];
 	int row_idx = row_off[row];
@@ -42,22 +47,38 @@ __global__ void spmv(float * __restrict__ values, int * __restrict__ col_idx, in
 	//printf("sum1 = %f\n", sum);
 
 	//for(int i = N; i > 0; i--)
-		atomicAdd(&rowsum,sum); //+= __shfl_down(sum,i);
+		//atomicAdd(&rowsum,sum); //+= __shfl_down(sum,i);
+
+	// for(int i = N/2; i > 0; i/=2)
+	// 	if(__shfl_down(sum, i) != sum)
+	// 		sum += __shfl_down(sum, i);
+
+	sum = warpReduceSum(sum);
+
+	if (lid == 0) shared[vid]=sum;
+
+	__syncthreads();   
+
+	sum = (threadIdx.x < blockDim.x / warpSize) ? shared[lid] : 0;
+
+	//if (vid == 0) sum = warpReduceSum(sum);
 
 	//__syncthreads();
 
 	//printf("sum2 = %f\n", sum);
 
 	//if(lid == 0)
-		res[row] = rowsum;
+		//res[row] = rowsum;
 		//atomicAdd(&res[row],sum);// += sum;
+	if(vid == 0)
+		atomicAdd(&res[row],sum);
 	
 }
 
 int main()
 {
 	srand (time(NULL)); //Set current time as random seed.
-	int m = 1000, n = 1000; //Matrix dimensions
+	int m = 100, n = 100; //Matrix dimensions
 	int nnz = 0, nnz_row[m], nnz_max = 0; // nnz -> number of non zeros
 	float *mat[m], *vect, *res;
 	float *values;

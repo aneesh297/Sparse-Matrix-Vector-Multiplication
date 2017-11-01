@@ -15,7 +15,7 @@ using namespace std;
 		float prob = (rand()%10)/10.0;
 
 		//If randomly generated no (b/w 0 and 1) is not greater than 0.7 then matrix cell value is 0.
-		if(prob>=0.1)
+		if(prob>=0.8)
 		{
 			arr[j] = rand()%100 + 1;
 			nnz_row++;
@@ -178,7 +178,7 @@ int checker(float *arr1, float *arr2, int size)
 
 	for(int i = 0; i < size; i++)
 	{
-		err = arr1[0] - arr2[0];
+		err = arr1[i] - arr2[i];
 		if(err > 0.1){
 			cout<<"Incorrect";
 			return 0;
