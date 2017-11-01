@@ -15,7 +15,7 @@ using namespace std;
 		float prob = (rand()%10)/10.0;
 
 		//If randomly generated no (b/w 0 and 1) is not greater than 0.7 then matrix cell value is 0.
-		if(prob>=0.7)
+		if(prob>=0.1)
 		{
 			arr[j] = rand()%100 + 1;
 			nnz_row++;
@@ -168,6 +168,23 @@ void calculate_bin_size(vector <vector<int> > &bins, int *nnz_row, int m)
 			cnt = 1;
 
 		bins[cnt].push_back(i);
-		cout<<nnz_row[i]<<" "<<i<<endl;
+		//cout<<nnz_row[i]<<endl;
 	}
+}
+
+int checker(float *arr1, float *arr2, int size)
+{
+	float err = 0;
+
+	for(int i = 0; i < size; i++)
+	{
+		err = arr1[0] - arr2[0];
+		if(err > 0.1){
+			cout<<"Incorrect";
+			return 0;
+		}
+	}
+
+	cout<<"Correct Result";
+	return 0;
 }
