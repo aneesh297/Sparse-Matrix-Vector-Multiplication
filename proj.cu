@@ -11,6 +11,28 @@ float warpReduceSum(float val) {
     	val += __shfl_down(val, offset);
   return val;
 }
+
+__inline__ __device__
+float blockReduceSum(float val) {
+
+  static __shared__ int shared[32]; // Shared mem for 32 partial sums
+  int lane = threadIdx.x % warpSize;
+  int wid = threadIdx.x / warpSize;
+
+  val = warpReduceSum(val);     // Each warp performs partial reduction
+
+  if (lane==0) shared[wid]=val; // Write reduced value to shared memory
+
+  __syncthreads();              // Wait for all partial reductions
+
+  //read from shared memory only if that warp existed
+  val = (threadIdx.x < blockDim.x / warpSize) ? shared[lane] : 0;
+
+  if (wid==0) val = warpReduceSum(val); //Final reduce within first warp
+
+  return val;
+}
+
 __global__ void spmv(float * __restrict__ values, int * __restrict__ col_idx, int * __restrict__ row_off,float * __restrict__ vect,\
  float res[], int  m, int  n, int *  bin, int  bin_size,int  N, int nnz)
 {
@@ -28,20 +50,27 @@ __global__ void spmv(float * __restrict__ values, int * __restrict__ col_idx, in
 		next_row_idx = row_off[row+1];
 	else
 		next_row_idx = nnz;
-
-		//printf("\nblockid = %d, threadid = %d,row = %d, row_idx = %d, next_row_idx = %d \n",blockIdx.x, tid, row, row_idx, next_row_idx);
-
-	float var = 1<<(N-1);
-
-	for(int i = row_idx + tid; i < next_row_idx; i+= var)
+	for(int i = row_idx + tid; i < next_row_idx; i+= 1<<(N-1))
 	{
 		sum += values[i] * vect[col_idx[i]];
-		//printf("\nblockid = %d, threadid = %d,value = %f, vect = %f \n",blockIdx.x, tid, values[i], vect[col_idx[i]]);
-		//printf("\nmultiplication: %.0f x %.0f\n", values[i], vect[col_idx[i]]);
 	} 
 
 	//printf("sum1 = %f\n", sum);
 	__syncthreads();
+
+	//sum = warpReduceSum(sum);
+	for (int offset = warpSize/2; offset > 0; offset /= 2) 
+    	sum += __shfl_down(sum, offset);
+	if (lid == 0) shared[vid]=sum;
+	__syncthreads();
+	sum = shared[lid];//(threadIdx.x < blockDim.x / warpSize) ? shared[lid] : 0;
+	if (vid == 0) {
+		for (int offset = warpSize/2; offset > 0; offset /= 2) 
+    	sum += __shfl_down(sum, offset);
+	}
+
+	//printf("Sum = %f\n", sum);
+
 
 	
 	//printf("sum1 = %f\n", sum);
@@ -53,13 +82,13 @@ __global__ void spmv(float * __restrict__ values, int * __restrict__ col_idx, in
 	// 	if(__shfl_down(sum, i) != sum)
 	// 		sum += __shfl_down(sum, i);
 
-	sum = warpReduceSum(sum);
+	//sum = warpReduceSum(sum);
 
-	if (lid == 0) shared[vid]=sum;
+	//if (lid == 0) shared[vid]=sum;
 
-	__syncthreads();   
+	//__syncthreads();   
 
-	sum = (threadIdx.x < blockDim.x / warpSize) ? shared[lid] : 0;
+	//sum = (threadIdx.x < blockDim.x / warpSize) ? shared[lid] : 0;
 
 	//if (vid == 0) sum = warpReduceSum(sum);
 
@@ -78,7 +107,7 @@ __global__ void spmv(float * __restrict__ values, int * __restrict__ col_idx, in
 int main()
 {
 	srand (time(NULL)); //Set current time as random seed.
-	int m = 100, n = 100; //Matrix dimensions
+	int m = 1000, n = 1000; //Matrix dimensions
 	int nnz = 0, nnz_row[m], nnz_max = 0; // nnz -> number of non zeros
 	float *mat[m], *vect, *res;
 	float *values;
