@@ -6,7 +6,7 @@ using namespace std;
  float * sparse_gen(int n, int &nnz, int &nnz_row, int &nnz_max)
 {
 	float *arr = new float[n];
-	
+
 	nnz_row = 0;
 
 	for (int j = 0; j < n; j++)
@@ -71,7 +71,7 @@ void display_vector(float *vect, int n)
 		cout<<vect[i]<<" ";
 	}
 
-	cout<<endl;	
+	cout<<endl;
 }
 
 //Converts a matrix to the Compressed Sparse Row format
@@ -175,13 +175,17 @@ void calculate_bin_size(vector <vector<int> > &bins, int *nnz_row, int m)
 int checker(float *arr1, float *arr2, int size)
 {
 	float err = 0;
+	int count = 0;
 
 	for(int i = 0; i < size; i++)
 	{
 		err = abs(arr1[i] - arr2[i]);
 		if(err > 0.1){
-			cout<<"Incorrect";
-			return 0;
+			cout<<"Incorrect ";
+			cout<<arr1[i]<<" "<<arr2[i]<<" "<<err<<" "<<i<<endl;
+			count++;
+			if(count>10)
+				return 0;
 		}
 	}
 

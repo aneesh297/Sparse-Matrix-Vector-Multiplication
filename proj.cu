@@ -7,7 +7,7 @@ using namespace std;
 
 __inline__ __device__
 float warpReduceSum(float val) {
-  for (int offset = warpSize/2; offset > 0; offset /= 2) 
+  for (int offset = warpSize/2; offset > 0; offset /= 2)
     	val += __shfl_down(val, offset);
   return val;
 }
@@ -50,18 +50,21 @@ __global__ void spmv(float * __restrict__ values, int * __restrict__ col_idx, in
 	for(int i = row_idx + tid; i < next_row_idx; i+= 1<<(N-1))
 	{
 		sum += values[i] * vect[col_idx[i]];
-	} 
+	}
 
 	__syncthreads();
 
 	sum = blockReduceSum(sum);
-	
+
 
 
 	if(lid == 0 && vid == 0)
 		res[row] = sum;
-	
+
 }
+
+__global__ void dynamicParallelParent(float * __restrict__ values, int * __restrict__ col_idx, int * __restrict__ row_off,float * __restrict__ vect,\
+ float res[], int  m, int  n, int *  bin, int  bin_size,int  N, int nnz){}
 
 int main()
 {
@@ -113,7 +116,7 @@ int main()
 
     clock_t end = clock();
     double elapsed_secs = double(end - begin) / CLOCKS_PER_SEC;
-	
+
 
 	cout<<"\nTime taken for sequential: "<<elapsed_secs*1000<<"\n\n\n";
 
@@ -208,12 +211,12 @@ int main()
 			cudaFree(dbin);
 			kernel_time += milliseconds;
 		}
-		
+
 	}
 
 	end = clock();
 	elapsed_secs = double(end - begin) / CLOCKS_PER_SEC;
-	
+
 
 	cout<<"\nTime taken for pll: "<<elapsed_secs*1000<<"\n\n\n";
 
