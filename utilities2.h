@@ -111,7 +111,7 @@ int checker(float *arr1, float *arr2, int size)
 			cout<<"Incorrect ";
 			cout<<arr1[i]<<" "<<arr2[i]<<" "<<err<<" "<<i<<endl;
 			count++;
-			if(count>10)
+			if(count>100)
 				return 0;
 		}
 	}

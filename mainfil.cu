@@ -4,7 +4,7 @@
 
 using namespace std;
 
-#define BIN_MAX 10
+#define BIN_MAX 5
 #define ROW_MAX 1024
 #define THREAD_LOAD 5
 
@@ -88,10 +88,8 @@ __global__ void row_specific_spmv(float* values,int* col_idx,int* row_off, float
 
 	sum = blockReduceSum(sum);
 
-	if(lid == 0 && vid == 0){
+	if(lid == 0 && vid == 0)
 		res[row] = sum;
-    printf("inrowspecific, row = %f\n",sum);
-  }
 
 }
 __global__ void dynamicParallelParent(float * values, int * col_idx, int * row_off,float * x,\
@@ -108,11 +106,6 @@ __global__ void dynamicParallelParent(float * values, int * col_idx, int * row_o
     next_row_idx = row_off[row+1];
 
   int NNZ = next_row_idx - row_idx;
-  if(row==3){
-  printf("row = %d ",row);
-  // printf("row_idx = %d ",row_idx);
-  printf("NNZ = %d\n",NNZ);
-  }
   int bsize = (NNZ-1)/THREAD_LOAD + 1;
 
   row_specific_spmv<<<1,bsize>>>(values,col_idx,row_off,x,res,m,n,nnz,row,bsize);
@@ -140,8 +133,14 @@ float* driver(float *values, int *col_idx, int* row_off, float* x, float* y, int
   max_nnz = max(max_nnz, m-row_off[m-1]);
   // cout<<"max_nnz = "<<max_nnz<<"\n";
 
+//Timer setup
+  float milliseconds = 0;
+  cudaEvent_t start, stop;
+  cudaEventCreate(&start);
+  cudaEventCreate(&stop);
+
   int max_bins = calc_bin_index(max_nnz);
-  // cout<<"max_bins = "<<max_bins<<"\n";
+   cout<<"max_bins = "<<max_bins<<"\n";
   vector<int> bins[max_bins+1];
 
   for(int i = 1;i<m;i++){
@@ -161,23 +160,40 @@ float* driver(float *values, int *col_idx, int* row_off, float* x, float* y, int
   int *dcol_idx, *drow_off;
   float *dvect, *dres, *dvalues;
 
+//Memory Allocation
+  cout<<"Allocating memory\n";
+  cudaEventRecord(start);
   cudaMalloc((void**)&dcol_idx, (nnz)*sizeof(int));
   cudaMalloc((void**)&drow_off, (m)*sizeof(int));
   cudaMalloc((void**)&dvect, (n)*sizeof(float));
   cudaMalloc((void**)&dres, (m)*sizeof(float));
   cudaMalloc((void**)&dvalues, (nnz)*sizeof(float));
+  cudaEventRecord(stop);
+  cudaEventSynchronize(stop);
+  cudaEventElapsedTime(&milliseconds, start, stop);
+  cout<<"Memory Allocation successful: "<<milliseconds<<"ms\n";
 
+
+  //Copying memory to GPU
+  cout<<"Copying memory to GPU\n";
+  cudaEventRecord(start);
   cudaMemcpy(dcol_idx, col_idx, (nnz)*sizeof(int), cudaMemcpyHostToDevice);
   cudaMemcpy(drow_off, row_off, (m)*sizeof(int), cudaMemcpyHostToDevice);
   cudaMemcpy(dvect, x, (n)*sizeof(float), cudaMemcpyHostToDevice);
   cudaMemcpy(dvalues, values, (nnz)*sizeof(float), cudaMemcpyHostToDevice);
   cudaMemset(dres, 0, n * sizeof(float));
+  cudaEventRecord(stop);
+  cudaEventSynchronize(stop);
+  cudaEventElapsedTime(&milliseconds, start, stop);
+  cout<<"Memory copy complete: "<<milliseconds<<"ms\n";
 
+  float kernel_time = 0;
   //Calculate G2
   for(int i = 1; i <=min(max_bins,BIN_MAX); i++)
 	{
 		if(bins[i].size()>0)
 		{
+      cout<<"Currently Bin "<<i<<endl;
       int *dbin;
 			cudaMalloc((void**)&dbin, bins[i].size() * sizeof(int));
 
@@ -187,13 +203,27 @@ float* driver(float *values, int *col_idx, int* row_off, float* x, float* y, int
 
 			cudaMemcpy(dbin, arr, (bins[i].size())*sizeof(int), cudaMemcpyHostToDevice);
 
-			int dimBlock = (1 << (i - 1)) ;
+			int dimBlock = (1 << (i - 1));
+      if(dimBlock > 1024)
+        dimBlock = 1024;
 			dim3 dimGrid(bins[i].size());
+      cout<<"Total No of threads: "<<dimBlock*bins[i].size()<<endl;
 
+      cout<<"Executing Kernel: ";
+      cudaEventRecord(start);
 			spmv<<<dimGrid,dimBlock>>>(dvalues, dcol_idx, drow_off, dvect, dres, m, n, dbin, bins[i].size(), i, nnz);
+      cudaEventRecord(stop);
+      cudaEventSynchronize(stop);
+      cudaEventElapsedTime(&milliseconds, start, stop);
+      cout<<"Bin "<<i<<" execution complete: "<<milliseconds<<"ms\n";
+
 			cudaFree(dbin);
+
+      kernel_time += milliseconds;
 		}
 	}
+
+  printf("\n\nGPU time taken for G2: %f\n\n", kernel_time);
 
   int *G1,*dG1;
   G1 = (int*)malloc(sizeof(int)*(m));
@@ -210,7 +240,14 @@ float* driver(float *values, int *col_idx, int* row_off, float* x, float* y, int
   cout<<"\n\n";
   cudaMalloc((void**)&dG1,(no_of_bigrows)*sizeof(int));
   cudaMemcpy(dG1,G1,no_of_bigrows*sizeof(int),cudaMemcpyHostToDevice);
+
+  cout<<"Executing G1 Kernel: ";
+  cudaEventRecord(start);
   dynamicParallelParent<<<1,no_of_bigrows>>>(dvalues, dcol_idx, drow_off, dvect, dres, m, n, nnz, dG1, no_of_bigrows);
+  cudaEventRecord(stop);
+  cudaEventSynchronize(stop);
+  cudaEventElapsedTime(&milliseconds, start, stop);
+  cout<<"Time taken for G1: "<<milliseconds<<" ms\n";
 
   float* kres = (float*)malloc(m*sizeof(float));
   cudaMemcpy(kres, dres, (m)*sizeof(float), cudaMemcpyDeviceToHost);
@@ -225,7 +262,7 @@ int main(){
    int n,m,nnz=0;
    int nnz_max;
    float *x;
-
+   srand (time(NULL)); //Set current time as random seed.
   // cout<<"m,n = ";
   // cin>>m>>n;
   //
@@ -252,11 +289,20 @@ int main(){
   // //cout<<"y = ";
 
   // //for(int i=0;i<m;i++) cin>>y[i];
-   conv(nnz, m, n, nnz_max);
-   x = vect_gen(n);
-   float* y = (float*) malloc(m*sizeof(float));
-   float *res = new float[m];
-   simple_spmv(res, x, values, col_idx, row_off, nnz, m, n);
+  conv(nnz, m, n, nnz_max);
+  x = vect_gen(n);
+  float* y = (float*) malloc(m*sizeof(float));
+  float *res = new float[m];
+
+  clock_t begin = clock();
+  simple_spmv(res, x, values, col_idx, row_off, nnz, m, n);
+  clock_t end = clock();
+  double elapsed_secs = double(end - begin) / CLOCKS_PER_SEC;
+  cout<<"\nTime taken for sequential: "<<elapsed_secs*1000<<"\n\n\n";
+
+
+
+
    y = driver(values,col_idx,row_off,x,y,m,n,nnz);
    checker(y,res,m);
 
