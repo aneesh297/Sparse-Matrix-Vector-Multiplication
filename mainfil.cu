@@ -1,5 +1,5 @@
 #include <bits/stdc++.h>
-#include "utilities2.h"
+#include "utilities.h"
 #include "io.h"
 
 using namespace std;
@@ -40,28 +40,22 @@ __global__ void spmv(float *  values, int *  col_idx, int *  row_off,float *  ve
  float * res , int  m, int  n, int *  bin, int  bin_size,int  N, int nnz)
 {
 	int tid = threadIdx.x;
-	int lid = tid%32;
-	int vid = tid/32;
 	float sum = 0;
 	int row = bin[blockIdx.x];
 	int row_idx = row_off[row];
 	int next_row_idx;
-	if(row < (m-1))
-		next_row_idx = row_off[row+1];
-	else
-		next_row_idx = nnz;
+
+	next_row_idx = row_off[row+1];
+
+
 	for(int i = row_idx + tid; i < next_row_idx; i+= blockDim.x)
 	{
 		sum += values[i] * vect[col_idx[i]];
 	}
 
-	__syncthreads();
-
 	sum = blockReduceSum(sum);
 
-
-
-	if(lid == 0 && vid == 0)
+	if(tid == 0)
 		res[row] = sum;
 
 }
@@ -175,7 +169,7 @@ float* driver(float *values, int *col_idx, int* row_off, float* x, float* y, int
   cout<<"Allocating memory\n";
   cudaEventRecord(start);
   cudaMalloc((void**)&dcol_idx, (nnz)*sizeof(int));
-  cudaMalloc((void**)&drow_off, (m)*sizeof(int));
+  cudaMalloc((void**)&drow_off, (m+1)*sizeof(int));
   cudaMalloc((void**)&dvect, (n)*sizeof(float));
   cudaMalloc((void**)&dres, (m)*sizeof(float));
   cudaMalloc((void**)&dvalues, (nnz)*sizeof(float));
@@ -189,7 +183,7 @@ float* driver(float *values, int *col_idx, int* row_off, float* x, float* y, int
   cout<<"Copying memory to GPU\n";
   cudaEventRecord(start);
   cudaMemcpy(dcol_idx, col_idx, (nnz)*sizeof(int), cudaMemcpyHostToDevice);
-  cudaMemcpy(drow_off, row_off, (m)*sizeof(int), cudaMemcpyHostToDevice);
+  cudaMemcpy(drow_off, row_off, (m+1)*sizeof(int), cudaMemcpyHostToDevice);
   cudaMemcpy(dvect, x, (n)*sizeof(float), cudaMemcpyHostToDevice);
   cudaMemcpy(dvalues, values, (nnz)*sizeof(float), cudaMemcpyHostToDevice);
   cudaMemset(dres, 0, n * sizeof(float));

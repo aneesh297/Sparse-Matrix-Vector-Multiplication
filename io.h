@@ -81,10 +81,11 @@ static void conv(int &nnz, int &row_length, int &column_length, int &nnz_max)
 	coovalues = new float[nnz];
 	values = (float*) malloc(sizeof(float)*nnz);
 	col_idx = (int*) malloc(sizeof(int)*nnz);
-	row_off = (int*) malloc(sizeof(int)*row_length);
+	row_off = (int*) malloc(sizeof(int)*(row_length+1));
 	std::fill(row, row + nnz, 0);
 	std::fill(column, column + nnz, 0);
 	std::fill(values, values + nnz, 0);
+
 	// Read the data
 	for (int l = 0; l < nnz; l++)
 	{
@@ -97,48 +98,24 @@ static void conv(int &nnz, int &row_length, int &column_length, int &nnz_max)
 		coovalues[l] = rand()%10 + 1;
 	}
 
-	// for(int i = 0; i < 20; i++)
-	// {
-	// 	cout<<row[i]<<" "<<column[i]<<" "<<values[i]<<endl;
-	// }
-	// cout<<"\n\n";
-
-	// int *csr_values, *col_idx, *row_off;
-	 //csr_values = new float[nnz];
-	 //col_idx = new int[nnz];
-	 //row_off = new int[row_length];
 	coo2csr(row_length, nnz, coovalues, row, column, values, col_idx, row_off);
+
 	nnz_max = 0;
+
 	for(int i = 0;i < -1 + row_length; i++)
 	{
 		if((row_off[i+1] - row_off[i]) > nnz_max)
 			nnz_max = (row_off[i+1] - row_off[i]);
 	}
+
 	if((nnz - row_off[row_length-1]) > nnz_max)
 		nnz_max = nnz - row_off[row_length-1];
 
+	row_off[row_length] = nnz;
 
 	delete []row;
 	delete []column;
 	delete []coovalues;
-//PRINT new values
-	// cout<<"Values: "<<endl;
-	// for(int i = 0; i < 20; i++)
-	// {
-	// 	cout<<csr_values[i]<<" ";
-	// }
-
-	// cout<<"\nCol Idx: "<<endl;
-	// for(int i = 0; i < 20; i++)
-	// {
-	// 	cout<<col_idx[i]<<" ";
-	// }
-
-	// cout<<"\nRow Off: "<<endl;
-	// for(int i = 0; i < 20; i++)
-	// {
-	// 	cout<<row_off[i]<<" ";
-	// }
 
 	fin.close();
 }
