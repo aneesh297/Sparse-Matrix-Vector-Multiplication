@@ -39,8 +39,8 @@ float blockReduceSum(float val) {
   return val;
 }
 
-__global__ void spmv(float *  values, int *  col_idx, int *  row_off,float *  vect,\
- float * res , int  m, int  n, int *  bin, int  bin_size,int  N, int nnz)
+__global__ void spmv(const float * __restrict__ values,const int * __restrict__ col_idx,const int * __restrict__ row_off,const float * __restrict__ vect,\
+ float * __restrict__ res , int  m, int  n,const int * __restrict__  bin, int  bin_size,int  N, int nnz)
 {
 	int tid = threadIdx.x;
 	float sum = 0;
