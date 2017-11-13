@@ -10,8 +10,11 @@ using namespace std;
 
 __inline__ __device__
 float warpReduceSum(float val) {
-  for (int offset = warpSize/2; offset > 0; offset /= 2)
-    	val += __shfl_down(val, offset);
+  val += __shfl_down(val, 16);
+  val += __shfl_down(val, 8);
+  val += __shfl_down(val, 4);
+  val += __shfl_down(val, 2);
+  val += __shfl_down(val, 1);
   return val;
 }
 
