@@ -65,55 +65,61 @@ __global__ void spmv(float *  values, int *  col_idx, int *  row_off,float *  ve
 		res[row] = sum;
 
 }
-///////
-// __global__ void row_specific_spmv(float* __restrict__ values,int * __restrict__ col_idx,int * __restrict__ row_off,\
-//  float * __restrict__ x,float * __restrict__ res,int m,int n,int nnz,int row,int noOfThreads){
-//   int tid = threadIdx.x;
-//   int lid = tid%32;
-//   int vid = tid/32;
+////////////////////////////////////////////////////////////////////////////////////
+// Kernel for dynamic parallelism
+// flag -rdc=true should be set if this kernel is called
+////////////////////////////////////////////////////////////////////////////////////
+/*
+__global__ void row_specific_spmv(float* __restrict__ values,int * __restrict__ col_idx,int * __restrict__ row_off,\
+ float * __restrict__ x,float * __restrict__ res,int m,int n,int nnz,int row,int noOfThreads){
+  int tid = threadIdx.x;
+  int lid = tid%32;
+  int vid = tid/32;
 
-//   float sum = 0;
+  float sum = 0;
 
-//   int row_idx = row_off[row];
-// 	int next_row_idx;
-// 	if(row < (m-1))
-// 		next_row_idx = row_off[row+1];
-// 	else
-// 		next_row_idx = nnz;
-// 	for(int i = row_idx + tid; i < next_row_idx; i+= noOfThreads)
-// 	{
-// 		sum += values[i] * x[col_idx[i]];
-// 	}
+  int row_idx = row_off[row];
+	int next_row_idx;
+	if(row < (m-1))
+		next_row_idx = row_off[row+1];
+	else
+		next_row_idx = nnz;
+	for(int i = row_idx + tid; i < next_row_idx; i+= noOfThreads)
+	{
+		sum += values[i] * x[col_idx[i]];
+	}
 
-// 	__syncthreads();
+	__syncthreads();
 
-// 	sum = blockReduceSum(sum);
+	sum = blockReduceSum(sum);
 
-// 	if(lid == 0 && vid == 0)
-// 		res[row] = sum;
+	if(lid == 0 && vid == 0)
+		res[row] = sum;
 
-// }
-// __global__ void dynamicParallelParent(float * __restrict__ values, int * __restrict__ col_idx, int * __restrict__ row_off,float * __restrict__ x,\
-//  float * __restrict__ res, int  m, int  n, int nnz,int * __restrict__ G1, int G1_size){
-//   int tid = threadIdx.x;
-//   // printf("threadIdx = %d\n",tid);
-//   int row = G1[tid];
-//   int row_idx = row_off[row];
-//   int next_row_idx;
-//   if(row==m-1){
-//     next_row_idx = nnz;
-//   }
-//   else
-//     next_row_idx = row_off[row+1];
+}
+__global__ void dynamicParallelParent(float * __restrict__ values, int * __restrict__ col_idx, int * __restrict__ row_off,float * __restrict__ x,\
+ float * __restrict__ res, int  m, int  n, int nnz,int * __restrict__ G1, int G1_size){
+  int tid = threadIdx.x;
+  // printf("threadIdx = %d\n",tid);
+  int row = G1[tid];
+  int row_idx = row_off[row];
+  int next_row_idx;
+  if(row==m-1){
+    next_row_idx = nnz;
+  }
+  else
+    next_row_idx = row_off[row+1];
 
-//   int NNZ = next_row_idx - row_idx;
-//   int bsize = (NNZ-1)/THREAD_LOAD + 1;
+  int NNZ = next_row_idx - row_idx;
+  int bsize = (NNZ-1)/THREAD_LOAD + 1;
 
 
-//   row_specific_spmv<<<1,bsize>>>(values,col_idx,row_off,x,res,m,n,nnz,row,bsize);
-//  }
+  row_specific_spmv<<<1,bsize>>>(values,col_idx,row_off,x,res,m,n,nnz,row,bsize);
+ }
+*/
+ ////////////////////////////////////////////////////////////////////////////////////
 
- ///////
+
 int calc_bin_index(int nnz){
   if(nnz==0 | nnz==1)
     return nnz;
@@ -128,6 +134,8 @@ int calc_bin_index(int nnz){
   else return cnt;
 
 }
+
+
 // Matrix : m x n
 // Vector : n x 1
 float* driver(float *values, int *col_idx, int* row_off, float* x, float* y, int m, int n, int nnz){
@@ -135,9 +143,8 @@ float* driver(float *values, int *col_idx, int* row_off, float* x, float* y, int
   for(int i=1;i<m;i++)
     max_nnz = max(max_nnz,row_off[i]-row_off[i-1]);
   max_nnz = max(max_nnz, m-row_off[m-1]);
-  // cout<<"max_nnz = "<<max_nnz<<"\n";
 
-//Timer setup
+  //Timer setup
   float milliseconds = 0;
   cudaEvent_t start, stop;
   cudaEventCreate(&start);
@@ -192,6 +199,8 @@ float* driver(float *values, int *col_idx, int* row_off, float* x, float* y, int
   cout<<"Memory copy complete: "<<milliseconds<<"ms\n";
 
   float kernel_time = 0;
+
+
   //Calculate G2
   for(int i = 1; i <=min(max_bins,BIN_MAX); i++)
 	{
@@ -239,8 +248,6 @@ float* driver(float *values, int *col_idx, int* row_off, float* x, float* y, int
   }
 
   cout<<"no_of_bigrows = "<<no_of_bigrows<<"\n";
-  //cout<<"Big rows = \n";
-  //for(int i=0;i<no_of_bigrows;i++) cout<<G1[i]<<" ";
   cout<<"\n\n";
   cudaMalloc((void**)&dG1,(no_of_bigrows)*sizeof(int));
   cudaMemcpy(dG1,G1,no_of_bigrows*sizeof(int),cudaMemcpyHostToDevice);
@@ -253,12 +260,11 @@ float* driver(float *values, int *col_idx, int* row_off, float* x, float* y, int
   cudaEventElapsedTime(&milliseconds, start, stop);
   cout<<"Time taken for G1: "<<milliseconds<<" ms\n";
 
+  cout<<"Total GPU time = "<<kernel_time + milliseconds<<"\n";
+
   float* kres = (float*)malloc(m*sizeof(float));
   cudaMemcpy(kres, dres, (m)*sizeof(float), cudaMemcpyDeviceToHost);
 
-  //cout<<"result = ";
-  //for(int i=0;i<m;i++) cout<<kres[i]<<" ";
-  //cout<<"\n";
   return kres;
 }
 
@@ -267,32 +273,7 @@ int main(){
    int nnz_max;
    float *x;
    srand (time(NULL)); //Set current time as random seed.
-  // cout<<"m,n = ";
-  // cin>>m>>n;
-  //
-  // cout<<"matrix = \n";
-  // vector<vector<float> > mat(m,vector<float>(n));
-  // for(int i=0;i<m;i++){
-  //   for(int j=0;j<n;j++){
-  //     cin>>mat[i][j];
-  //     if(mat[i][j]!=0){
-  //       nnz++;
-  //     }
-  //   }
-  // }
-  // float* values = (float*)calloc(1,nnz*sizeof(float));
-  // int* row_off = (int*)calloc(1,m*sizeof(int));
-  // int* col_idx = (int*)calloc(1,nnz*sizeof(int));
-  // to_csr(mat,values,col_idx,row_off,m,n);
-  //
-  //
-  // cout<<"x = ";
-  // float* x = (float*) malloc(n*sizeof(float));
-  // for(int i=0;i<n;i++) cin>>x[i];
-  //
-  // //cout<<"y = ";
 
-  // //for(int i=0;i<m;i++) cin>>y[i];
   conv(nnz, m, n, nnz_max);
   x = vect_gen(n);
   float* y = (float*) malloc(m*sizeof(float));
@@ -303,9 +284,6 @@ int main(){
   clock_t end = clock();
   double elapsed_secs = double(end - begin) / CLOCKS_PER_SEC;
   cout<<"\nTime taken for sequential: "<<elapsed_secs*1000<<" ms\n\n\n";
-
-
-
 
    y = driver(values,col_idx,row_off,x,y,m,n,nnz);
    checker(y,res,m);
