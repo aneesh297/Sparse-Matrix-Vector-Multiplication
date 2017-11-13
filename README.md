@@ -2,4 +2,4 @@
 SpMV using CUDA
 
 To compile use:
-`nvcc -arch = sm_50 proj.cu`
+`nvcc mainfil.cu -arch=sm_50 -rdc=true`

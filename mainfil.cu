@@ -160,7 +160,7 @@ float* driver(float *values, int *col_idx, int* row_off, float* x, float* y, int
   int *dcol_idx, *drow_off;
   float *dvect, *dres, *dvalues;
 
-//Memory Allocation
+  //Memory Allocation
   cout<<"Allocating memory\n";
   cudaEventRecord(start);
   cudaMalloc((void**)&dcol_idx, (nnz)*sizeof(int));
@@ -171,7 +171,7 @@ float* driver(float *values, int *col_idx, int* row_off, float* x, float* y, int
   cudaEventRecord(stop);
   cudaEventSynchronize(stop);
   cudaEventElapsedTime(&milliseconds, start, stop);
-  cout<<"Memory Allocation successful: "<<milliseconds<<"ms\n";
+  cout<<"Memory Allocation successful: "<<milliseconds<<" ms\n";
 
 
   //Copying memory to GPU
@@ -209,7 +209,7 @@ float* driver(float *values, int *col_idx, int* row_off, float* x, float* y, int
 			dim3 dimGrid(bins[i].size());
       cout<<"Total No of threads: "<<dimBlock*bins[i].size()<<endl;
 
-      cout<<"Executing Kernel: ";
+      cout<<"Executing Kernel: \n";
       cudaEventRecord(start);
 			spmv<<<dimGrid,dimBlock>>>(dvalues, dcol_idx, drow_off, dvect, dres, m, n, dbin, bins[i].size(), i, nnz);
       cudaEventRecord(stop);
@@ -223,7 +223,7 @@ float* driver(float *values, int *col_idx, int* row_off, float* x, float* y, int
 		}
 	}
 
-  printf("\n\nGPU time taken for G2: %f\n\n", kernel_time);
+  printf("\n\nGPU time taken for G2: %f ms\n\n", kernel_time);
 
   int *G1,*dG1;
   G1 = (int*)malloc(sizeof(int)*(m));
@@ -241,7 +241,7 @@ float* driver(float *values, int *col_idx, int* row_off, float* x, float* y, int
   cudaMalloc((void**)&dG1,(no_of_bigrows)*sizeof(int));
   cudaMemcpy(dG1,G1,no_of_bigrows*sizeof(int),cudaMemcpyHostToDevice);
 
-  cout<<"Executing G1 Kernel: ";
+  cout<<"Executing G1 Kernel: \n";
   cudaEventRecord(start);
   dynamicParallelParent<<<1,no_of_bigrows>>>(dvalues, dcol_idx, drow_off, dvect, dres, m, n, nnz, dG1, no_of_bigrows);
   cudaEventRecord(stop);
@@ -298,7 +298,7 @@ int main(){
   simple_spmv(res, x, values, col_idx, row_off, nnz, m, n);
   clock_t end = clock();
   double elapsed_secs = double(end - begin) / CLOCKS_PER_SEC;
-  cout<<"\nTime taken for sequential: "<<elapsed_secs*1000<<"\n\n\n";
+  cout<<"\nTime taken for sequential: "<<elapsed_secs*1000<<" ms\n\n\n";
 
 
 
@@ -306,5 +306,5 @@ int main(){
    y = driver(values,col_idx,row_off,x,y,m,n,nnz);
    checker(y,res,m);
 
-
+   cout<<"\n\n";
 }
