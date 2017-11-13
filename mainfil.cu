@@ -39,8 +39,8 @@ float blockReduceSum(float val) {
   return val;
 }
 
-__global__ void spmv(float *  values, int *  col_idx, int *  row_off,float *  vect,\
- float * res , int  m, int  n, int *  bin, int  bin_size,int  N, int nnz)
+__global__ void spmv(const float * __restrict__ values,const int * __restrict__ col_idx,const int * __restrict__ row_off,cudaTextureObject_t vect,\
+ float * __restrict__ res , int  m, int  n,const int * __restrict__  bin, int  bin_size,int  N, int nnz)
 {
 	int tid = threadIdx.x;
 	float sum = 0;
@@ -53,7 +53,7 @@ __global__ void spmv(float *  values, int *  col_idx, int *  row_off,float *  ve
 
 	for(int i = row_idx + tid; i < next_row_idx; i+= blockDim.x)
 	{
-		sum += values[i] * vect[col_idx[i]];
+		sum += values[i] * tex1Dfetch<float>(vect,col_idx[i]);//vect[col_idx[i]];
 	}
 
 	sum = blockReduceSum(sum);
@@ -197,6 +197,21 @@ float* driver(float *values, int *col_idx, int* row_off, float* x, float* y, int
 
   float kernel_time = 0;
 
+  cudaResourceDesc resDesc;
+  memset(&resDesc, 0, sizeof(resDesc));
+  resDesc.resType = cudaResourceTypeLinear;
+  resDesc.res.linear.devPtr = dvect;
+  resDesc.res.linear.desc.f = cudaChannelFormatKindFloat;
+  resDesc.res.linear.desc.x = 32; // bits per channel
+  resDesc.res.linear.sizeInBytes = n*sizeof(float);
+
+  cudaTextureDesc texDesc;
+  memset(&texDesc, 0, sizeof(texDesc));
+  texDesc.readMode = cudaReadModeElementType;
+
+  // create texture object: we only have to do this once!
+  cudaTextureObject_t tdvect=0;
+  cudaCreateTextureObject(&tdvect, &resDesc, &texDesc, NULL);
 
   //Calculate G2
   for(int i = 1; i <=min(max_bins,BIN_MAX); i++)
@@ -221,7 +236,7 @@ float* driver(float *values, int *col_idx, int* row_off, float* x, float* y, int
 
       cout<<"Executing Kernel: \n";
       cudaEventRecord(start);
-			spmv<<<dimGrid,dimBlock>>>(dvalues, dcol_idx, drow_off, dvect, dres, m, n, dbin, bins[i].size(), i, nnz);
+			spmv<<<dimGrid,dimBlock>>>(dvalues, dcol_idx, drow_off, tdvect, dres, m, n, dbin, bins[i].size(), i, nnz);
       cudaEventRecord(stop);
       cudaEventSynchronize(stop);
       cudaEventElapsedTime(&milliseconds, start, stop);
@@ -261,7 +276,7 @@ float* driver(float *values, int *col_idx, int* row_off, float* x, float* y, int
 
   float* kres = (float*)malloc(m*sizeof(float));
   cudaMemcpy(kres, dres, (m)*sizeof(float), cudaMemcpyDeviceToHost);
-
+  cudaDestroyTextureObject(tdvect);
   return kres;
 }
 
