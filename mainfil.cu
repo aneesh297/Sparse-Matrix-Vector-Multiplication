@@ -36,8 +36,8 @@ float blockReduceSum(float val) {
   return val;
 }
 
-__global__ void spmv(float * __restrict__ values, int * __restrict__ col_idx, int * __restrict__ row_off,float * __restrict__ vect,\
- float res[], int  m, int  n, int *  bin, int  bin_size,int  N, int nnz)
+__global__ void spmv(float *  values, int *  col_idx, int *  row_off,float *  vect,\
+ float * res , int  m, int  n, int *  bin, int  bin_size,int  N, int nnz)
 {
 	int tid = threadIdx.x;
 	int lid = tid%32;
@@ -50,7 +50,7 @@ __global__ void spmv(float * __restrict__ values, int * __restrict__ col_idx, in
 		next_row_idx = row_off[row+1];
 	else
 		next_row_idx = nnz;
-	for(int i = row_idx + tid; i < next_row_idx; i+= 1<<(N-1))
+	for(int i = row_idx + tid; i < next_row_idx; i+= blockDim.x)
 	{
 		sum += values[i] * vect[col_idx[i]];
 	}
@@ -65,51 +65,55 @@ __global__ void spmv(float * __restrict__ values, int * __restrict__ col_idx, in
 		res[row] = sum;
 
 }
+///////
+// __global__ void row_specific_spmv(float* __restrict__ values,int * __restrict__ col_idx,int * __restrict__ row_off,\
+//  float * __restrict__ x,float * __restrict__ res,int m,int n,int nnz,int row,int noOfThreads){
+//   int tid = threadIdx.x;
+//   int lid = tid%32;
+//   int vid = tid/32;
 
-__global__ void row_specific_spmv(float* values,int* col_idx,int* row_off, float* x,float res[],int m,int n,int nnz,int row,int noOfThreads){
-  int tid = threadIdx.x;
-  int lid = tid%32;
-  int vid = tid/32;
+//   float sum = 0;
 
-  float sum = 0;
+//   int row_idx = row_off[row];
+// 	int next_row_idx;
+// 	if(row < (m-1))
+// 		next_row_idx = row_off[row+1];
+// 	else
+// 		next_row_idx = nnz;
+// 	for(int i = row_idx + tid; i < next_row_idx; i+= noOfThreads)
+// 	{
+// 		sum += values[i] * x[col_idx[i]];
+// 	}
 
-  int row_idx = row_off[row];
-	int next_row_idx;
-	if(row < (m-1))
-		next_row_idx = row_off[row+1];
-	else
-		next_row_idx = nnz;
-	for(int i = row_idx + tid; i < next_row_idx; i+= noOfThreads)
-	{
-		sum += values[i] * x[col_idx[i]];
-	}
+// 	__syncthreads();
 
-	__syncthreads();
+// 	sum = blockReduceSum(sum);
 
-	sum = blockReduceSum(sum);
+// 	if(lid == 0 && vid == 0)
+// 		res[row] = sum;
 
-	if(lid == 0 && vid == 0)
-		res[row] = sum;
+// }
+// __global__ void dynamicParallelParent(float * __restrict__ values, int * __restrict__ col_idx, int * __restrict__ row_off,float * __restrict__ x,\
+//  float * __restrict__ res, int  m, int  n, int nnz,int * __restrict__ G1, int G1_size){
+//   int tid = threadIdx.x;
+//   // printf("threadIdx = %d\n",tid);
+//   int row = G1[tid];
+//   int row_idx = row_off[row];
+//   int next_row_idx;
+//   if(row==m-1){
+//     next_row_idx = nnz;
+//   }
+//   else
+//     next_row_idx = row_off[row+1];
 
-}
-__global__ void dynamicParallelParent(float * values, int * col_idx, int * row_off,float * x,\
- float res[], int  m, int  n, int nnz,int*  G1, int G1_size){
-  int tid = threadIdx.x;
-  // printf("threadIdx = %d\n",tid);
-  int row = G1[tid];
-  int row_idx = row_off[row];
-  int next_row_idx;
-  if(row==m-1){
-    next_row_idx = nnz;
-  }
-  else
-    next_row_idx = row_off[row+1];
+//   int NNZ = next_row_idx - row_idx;
+//   int bsize = (NNZ-1)/THREAD_LOAD + 1;
 
-  int NNZ = next_row_idx - row_idx;
-  int bsize = (NNZ-1)/THREAD_LOAD + 1;
 
-  row_specific_spmv<<<1,bsize>>>(values,col_idx,row_off,x,res,m,n,nnz,row,bsize);
- }
+//   row_specific_spmv<<<1,bsize>>>(values,col_idx,row_off,x,res,m,n,nnz,row,bsize);
+//  }
+
+ ///////
 int calc_bin_index(int nnz){
   if(nnz==0 | nnz==1)
     return nnz;
@@ -243,7 +247,7 @@ float* driver(float *values, int *col_idx, int* row_off, float* x, float* y, int
 
   cout<<"Executing G1 Kernel: \n";
   cudaEventRecord(start);
-  dynamicParallelParent<<<1,no_of_bigrows>>>(dvalues, dcol_idx, drow_off, dvect, dres, m, n, nnz, dG1, no_of_bigrows);
+  //dynamicParallelParent<<<1,no_of_bigrows>>>(dvalues, dcol_idx, drow_off, dvect, dres, m, n, nnz, dG1, no_of_bigrows);
   cudaEventRecord(stop);
   cudaEventSynchronize(stop);
   cudaEventElapsedTime(&milliseconds, start, stop);
