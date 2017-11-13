@@ -63,7 +63,7 @@ void coo2csr(int row_length, int nnz, float *values, int *row, int *col,
 
 static void conv(int &nnz, int &row_length, int &column_length, int &nnz_max)
 {
-	std::ifstream fin("datasets/internet.mtx");//internet.mtx");
+	std::ifstream fin("datasets/amazon-2008.mtx");//internet.mtx");
 
 	//int row_length, column_length, nnz;
 
@@ -90,11 +90,11 @@ static void conv(int &nnz, int &row_length, int &column_length, int &nnz_max)
 	{
 		int m, n;
 		float data;
-		fin >> m >> n >> data;
+		fin >> m >> n;// >> data;
 
 		row[l] = m;
 		column[l] = n;
-		coovalues[l] = rand()%100 + 1;
+		coovalues[l] = rand()%10 + 1;
 	}
 
 	// for(int i = 0; i < 20; i++)

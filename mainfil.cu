@@ -4,7 +4,7 @@
 
 using namespace std;
 
-#define BIN_MAX 5
+#define BIN_MAX 30
 #define ROW_MAX 1024
 #define THREAD_LOAD 5
 

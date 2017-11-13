@@ -42,7 +42,7 @@ float *vect_gen(int n)
 
  for(int i = 0; i < n; i++)
  {
-   vect[i] = rand()%100;
+   vect[i] = rand()%10;
  }
 
  return vect;
@@ -108,15 +108,20 @@ int checker(float *arr1, float *arr2, int size)
 	{
 		err = abs(arr1[i] - arr2[i]);
 		if(err > 0.1){
-			cout<<"Incorrect ";
-			cout<<arr1[i]<<" "<<arr2[i]<<" "<<err<<" "<<i<<endl;
-			count++;
-			if(count>100)
-				return 0;
+      if(count>100)
+      {
+        cout<<"Incorrect ";
+        cout<<arr1[i]<<" "<<arr2[i]<<" "<<err<<" "<<i<<endl;
+      }
+			
+			 count++;
 		}
 	}
 
-	cout<<"Correct Result";
+  if(count == 0)
+	cout<<"Correct Result\n\n";
+  else
+    cout<<"no of Incorrect = "<<count<<endl;
 	return 0;
 }
 
