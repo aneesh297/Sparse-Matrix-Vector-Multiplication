@@ -17,14 +17,14 @@ void sort(int *col_idx, float *a, int start, int end)
       if (col_idx[j] > col_idx[j+1]){
 
 	if (a){
-	  dt=a[j]; 
-	  a[j]=a[j+1]; 
+	  dt=a[j];
+	  a[j]=a[j+1];
 	  a[j+1]=dt;
         }
-	it=col_idx[j]; 
-	col_idx[j]=col_idx[j+1]; 
+	it=col_idx[j];
+	col_idx[j]=col_idx[j+1];
 	col_idx[j+1]=it;
-	  
+
       }
 }
 
@@ -75,7 +75,7 @@ static void conv(int &nnz, int &row_length, int &column_length, int &nnz_max)
 
 	// Create your matrix:
 	int *row, *column;
-	float *coovalues;	
+	float *coovalues;
 	row = new int[nnz];
 	column = new int[nnz];
 	coovalues = new float[nnz];
@@ -117,7 +117,7 @@ static void conv(int &nnz, int &row_length, int &column_length, int &nnz_max)
 	if((nnz - row_off[row_length-1]) > nnz_max)
 		nnz_max = nnz - row_off[row_length-1];
 
-	
+
 	delete []row;
 	delete []column;
 	delete []coovalues;
