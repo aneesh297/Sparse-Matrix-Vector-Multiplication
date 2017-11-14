@@ -63,7 +63,7 @@ void coo2csr(int row_length, int nnz, float *values, int *row, int *col,
 
 static void conv(int &nnz, int &row_length, int &column_length, int &nnz_max)
 {
-	cout<<"Enter dataset name\n";
+	cout<<"Enter dataset name : ";
 	string d;
 	cin>>d;
 	d = "datasets/" + d + ".mtx";

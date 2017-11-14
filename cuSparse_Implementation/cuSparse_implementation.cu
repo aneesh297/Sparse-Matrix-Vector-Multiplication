@@ -23,14 +23,14 @@ inline void gpuAssert(cudaError_t code, const char *file, int line, bool abort=t
 /********/
 int main()
 {
-	// --- Initialize cuSPARSE
-
+  // Time calculators
   cudaEvent_t start,stop;
   float milliseconds = 0;
 
   cudaEventCreate(&start);
   cudaEventCreate(&stop);
 
+  // cuSparse Initialization
 	cusparseHandle_t handle;	cusparseCreate(&handle);
   cusparseMatDescr_t descrA;		cusparseCreateMatDescr(&descrA);
 	cusparseSetMatType		(descrA, CUSPARSE_MATRIX_TYPE_GENERAL);
@@ -40,7 +40,9 @@ int main()
    int nnz_max;
    double *x;
 
+   // Reading from dataset
    conv(nnz, m, n , nnz_max);
+   // Randomly generated
    x = vect_gen(n);
 
 
@@ -60,6 +62,7 @@ int main()
 	const double alpha = 1.;
 	const double beta  = 0.;
 
+  // cuSparse SpMV kernel called
   clock_t begin_cusparse = clock();
 	cusparseDcsrmv(handle, CUSPARSE_OPERATION_NON_TRANSPOSE, m, n, nnz, &alpha, descrA, d_A, d_A_RowIndices, d_A_ColIndices, d_x_dense,
 	                            &beta, d_y_dense);
@@ -67,18 +70,23 @@ int main()
   clock_t end_cusparse = clock();
   double elapsed_secs_cusparse = double(end_cusparse - begin_cusparse) / CLOCKS_PER_SEC;
   cout<<"\nTime taken for cusparse: "<<elapsed_secs_cusparse*1000<<" ms\n\n\n";
+  /////////////////////////////////
 
 
   double* h_y_dense; h_y_dense = (double*)malloc(m * sizeof(double));
   gpuErrchk(cudaMemcpy(h_y_dense, d_y_dense, m * sizeof(double), cudaMemcpyDeviceToHost));
 
+
+  // Serial code called
   double *res = new double[m];
   clock_t begin = clock();
   simple_spmv(res,x,values,col_idx,row_off,nnz, m, n);
   clock_t end = clock();
   double elapsed_secs = double(end - begin) / CLOCKS_PER_SEC;
   cout<<"\nTime taken for sequential: "<<elapsed_secs*1000<<" ms\n\n\n";
+  ///////////////////////////////////
 
+  // Check correctness
   checker(h_y_dense,res,m);
 
   cout<<"\n\n";
