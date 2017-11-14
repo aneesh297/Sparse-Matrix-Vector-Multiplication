@@ -2,7 +2,7 @@
 
 <head>
     <title>
-        Low Rate TCP-Targeted Denial of Service Attack
+        Sparse Matrix Vector Multiplication
     </title>
 
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
@@ -10,7 +10,6 @@
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.12.4/css/bootstrap-select.min.css">
-    <link rel="icon" href="favicon.png">
 
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.12.4/js/bootstrap-select.min.js"></script>
@@ -21,7 +20,7 @@
 <body>
     <div class="container">
         <div class="row" style="text-align:center;">
-            <h1>Graph: Throughput vs Burst Period</h1>
+            <h1>Graph for Runtime of ACSR</h1>
         </div>
         <hr>
         <div class="row">
@@ -32,79 +31,14 @@
                     <p style="text-align:center;">
                         <canvas id="myChart"></canvas>
                     </p>
-                    <select id="graphType" class="selectpicker">
-                  <option value="bl025">Burst Length : 0.25s</option>
-                  <option value="bl015">Burst Length : 0.15s</option>
-                  <option value="bl020">Burst Length : 0.20s</option>
-                  <option value="all">All</option>
-                </select>
                 </div>
             </div>
             <div class="col-sm-2"></div>
         </div>
         <br>
-        <h2>Explanation</h2>
-        <hr />
-        The ns-3 simulation was run for 100 seconds and the observations were recorded using the following
-        parameters :
-        <br /><br />
-        <table class="table table-hover">
-          <thead>
-            <tr>
-              <th>Burst Duration</th>
-              <th>Attacker's rate</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>0.15 s</td>
-              <td>12000 KB/s</td>
-            </tr>
-            <tr>
-              <td>0.25 s</td>
-              <td>7000 KB/s</td>
-            </tr>
-            <tr>
-              <td>0.20 s</td>
-              <td>12000 KB/s</td>
-            </tr>
-          </tbody>
-        </table>
-        <br />
-        <p>
-          The graph indicates that the effectiveness of the attack
-          does not increase with the attacker’s average rate. Most critically,
-          there are two “nulls” in the frequency response
-          in which TCP throughput almost becomes zero. In particular, Throughput is lowest when
-          when :<br />
-          <ul>
-            <li>
-            <b>burstPeriod=minRTO</b>
-            </li>
-            <li>
-              <b>burstPeriod=minRTO/2</b>.
-            </li>
-          </ul>
-          <br />
-          The physical interpretation of the graph
-          is as follows: <br />If the attacker creates the minRTO-periodic
-          outages, it will completely deny service to the TCP traffic. Once the
-          brief outage occurs, all flows will simultaneously timeout. When
-          their timeout expires after minRTO seconds and they again transmit
-          packets, the attacker creates another outage such that the flows
-          backoff again. Clearly, the most attractive period for a DoS attacker
-          is minRTO, since it is the null frequency that minimizes
-          the DoS flow’s average rate. When T>minRTO, as the
-          period of the attack increases, the TCP flows obtain increasingly
-          higher throughput during durations between expiration of retransmission
-          timers and the subsequent DoS outage.
-        </p>
-        <div class="row" style="text-align:center;">
-            <a href="index.html" style="text-decoration:none;" class="btn btn-primary">
-                Go to Animation
-            </a>
-        </div>
-        <br />
+        <h4 style="text-align:center;">
+          Click on a legend to toggle visibility of the associated graph
+        </h4>
     </div>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.4.0/Chart.min.js"></script>
     <script>
@@ -115,29 +49,19 @@
                 type: 'line',
                 // The data for our dataset
                 data: {
-                    labels: ["0.5", "0.8", "1.0", "1.2", "1.4", "1.6", "1.8", "2.0"],
+                    labels: ["amazon-2008", "flickr", "hollywood-2009", "in-2004", "cnr-2000", "eu-2005"],
                     datasets: [{
-                        label: "Burst Length = 0.25 s",
+                        label: "Intel i7-4510u",
                         borderColor: 'rgb(255, 99, 132)',
-                        data: [0.0049200492, 0.0691266913, 0.003198032, 0.2194341943, 0.50799508, 0.50799508,
-                            0.8467404674, 0.9633456335, 0.9633456335
-                        ],
+                        data: [43.259, 115.659, 525.414, 139.633, 21.911, 156.575],
                         fill: false,
                     }, {
-                        label: "Burst Length = 0.15 s",
+                        label: "ACSR on P100",
                         borderColor: 'rgb(44, 186, 37)',
-                        data: [0.0669126691, 0.2068880689, 0.0856088561, 0.4312423124, 0.5126691267, 0.3193111931,
-                            0.7180811808, 0.8578105781, 0.6386223862
-                        ],
+                        data: [5.537504, 5.757247, 13.23616, 9.937504, 2.431584, 7.085216],
                         fill: false,
-                    }, {
-                        label: "Burst Length = 0.2 s",
-                        borderColor: 'rgb(45, 37, 188)',
-                        data: [0.0661746617, 0.0654366544, 0.0661746617, 0.0669126691, 0.0666666667, 0.0686346863,
-                            0.1901599016, 0.181303813
-                        ],
-                        fill: false,
-                    }]
+                    },
+                  ]
                 },
                 // Configuration options go here
                 options: {
@@ -146,152 +70,22 @@
                             display: true,
                             scaleLabel: {
                                 display: true,
-                                labelString: 'Burst Period (in seconds)'
+                                labelString: 'Datasets'
                             }
                         }],
                         yAxes: [{
                             display: true,
                             scaleLabel: {
                                 display: true,
-                                labelString: 'Throughput'
+                                labelString: 'Runtime (ms)'
                             }
                         }]
                     }
                 }
             });
         }
-
-        function bl025() {
-            var ctx = document.getElementById('myChart').getContext('2d');
-            var chart = new Chart(ctx, {
-                // The type of chart we want to create
-                type: 'line',
-                // The data for our dataset
-                data: {
-                    labels: ["0.5", "0.8", "1.0", "1.2", "1.4", "1.6", "1.8", "2.0"],
-                    datasets: [{
-                        label: "Burst Length = 0.25 s",
-                        borderColor: 'rgb(255, 99, 132)',
-                        data: [0.0049200492, 0.0691266913, 0.003198032, 0.2194341943, 0.50799508, 0.50799508,
-                            0.8467404674, 0.9633456335, 0.9633456335
-                        ],
-                        fill: false,
-                    }, ]
-                },
-                // Configuration options go here
-                options: {
-                    scales: {
-                        xAxes: [{
-                            display: true,
-                            scaleLabel: {
-                                display: true,
-                                labelString: 'Burst Period (in seconds)'
-                            }
-                        }],
-                        yAxes: [{
-                            display: true,
-                            scaleLabel: {
-                                display: true,
-                                labelString: 'Throughput'
-                            }
-                        }]
-                    }
-                }
-            });
-        }
-
-        function bl015() {
-            var ctx = document.getElementById('myChart').getContext('2d');
-            var chart = new Chart(ctx, {
-                // The type of chart we want to create
-                type: 'line',
-                // The data for our dataset
-                data: {
-                    labels: ["0.5", "0.8", "1.0", "1.2", "1.4", "1.6", "1.8", "2.0"],
-                    datasets: [{
-                        label: "Burst Length = 0.15 s",
-                        borderColor: 'rgb(44, 186, 37)',
-                        data: [0.0669126691, 0.2068880689, 0.0856088561, 0.4312423124, 0.5126691267, 0.3193111931,
-                            0.7180811808, 0.8578105781, 0.6386223862
-                        ],
-                        fill: false,
-                    }, ]
-                },
-                // Configuration options go here
-                options: {
-                    scales: {
-                        xAxes: [{
-                            display: true,
-                            scaleLabel: {
-                                display: true,
-                                labelString: 'Burst Period (in seconds)'
-                            }
-                        }],
-                        yAxes: [{
-                            display: true,
-                            scaleLabel: {
-                                display: true,
-                                labelString: 'Throughput'
-                            }
-                        }]
-                    }
-                }
-            });
-        }
-
-        function bl020() {
-            var ctx = document.getElementById('myChart').getContext('2d');
-            var chart = new Chart(ctx, {
-                // The type of chart we want to create
-                type: 'line',
-                // The data for our dataset
-                data: {
-                    labels: ["0.5", "0.8", "1.0", "1.2", "1.4", "1.6", "1.8", "2.0"],
-                    datasets: [{
-                        label: "Burst Length = 0.2 s",
-                        borderColor: 'rgb(45, 37, 188)',
-                        data: [0.0661746617, 0.0654366544, 0.0661746617, 0.0669126691, 0.0666666667, 0.0686346863,
-                            0.1901599016, 0.181303813
-                        ],
-                        fill: false,
-                    }]
-                },
-                // Configuration options go here
-                options: {
-                    scales: {
-                        xAxes: [{
-                            display: true,
-                            scaleLabel: {
-                                display: true,
-                                labelString: 'Burst Period (in seconds)'
-                            }
-                        }],
-                        yAxes: [{
-                            display: true,
-                            scaleLabel: {
-                                display: true,
-                                labelString: 'Throughput'
-                            }
-                        }]
-                    }
-                }
-            });
-        }
-
         $(document).ready(function() {
-            bl025();
-        });
-        $('#graphType').change(function() {
-            if ($(this).val() === 'all') {
-                all();
-            } else if ($(this).val() === 'bl025') {
-                bl025();
-            } else if ($(this).val() === 'bl015') {
-                bl015();
-            }
-            if ($(this).val() === 'bl020') {
-                bl020();
-            }
+            all();
         });
     </script>
 </body>
