@@ -63,7 +63,11 @@ void coo2csr(int row_length, int nnz, float *values, int *row, int *col,
 
 static void conv(int &nnz, int &row_length, int &column_length, int &nnz_max)
 {
-	std::ifstream fin("datasets/hollywood-2009.mtx");//internet.mtx");
+	cout<<"Enter dataset name\n";
+	string d;
+	cin>>d;
+	d = "datasets/" + d + ".mtx";
+	std::ifstream fin(d.c_str());
 
 	//int row_length, column_length, nnz;
 
