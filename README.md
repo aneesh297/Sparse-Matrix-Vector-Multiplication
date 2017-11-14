@@ -18,10 +18,23 @@ SpMV is also implemented using `cuSparse` library for comparision with ACSR.
 <br/><br />
 
 ## Observations
-The values recorde are : <br/>
-**Insert recorded values table**<br/><br/>
+Our implementation of ACSR was run on the following GPUs : <br/>
+- P100
+- GTX 860M
 
-Graphs plotted for the above recorded values can be found here : [Graphs Page](http://htmlpreview.github.io/?https://github.com/aneesh297/Sparse-Matrix-Vector-Multiplication/blob/master/Observations/graphs.html)
+Serial implementation of SpMV was executed on : <br/>
+- i7\-4710U
+
+The runtimes for execution on the instances of the following datasets were recorded : 
+- amazon\-2008
+- flickr
+- hollywood\-2009
+- in\-2004
+- cnr\-2000
+- eu\-2005
+
+
+Graphs plotted for the recorded values can be found here : [Graphs Page](http://htmlpreview.github.io/?https://github.com/aneesh297/Sparse-Matrix-Vector-Multiplication/blob/master/Observations/graphs.html)
 
 ## Datasets
 Datasets can be found here: https://sparse.tamu.edu/
