@@ -23,22 +23,22 @@
             <h1>Graph for Runtime of ACSR</h1>
         </div>
         <hr>
+        <h4 style="text-align:center;">
+          Click on a legend to toggle visibility of the associated graph
+        </h4>
+        <br />
         <div class="row">
-            <div class="col-sm-2">
+            <div class="col-sm-1">
             </div>
-            <div class="col-sm-8">
-                <div style="width:600px;height:400px;text-align:center;margin: 0 auto;">
+            <div class="col-sm-10">
+                <div style="width:1000px;height:600px;text-align:center;margin: 0 auto;">
                     <p style="text-align:center;">
                         <canvas id="myChart"></canvas>
                     </p>
                 </div>
             </div>
-            <div class="col-sm-2"></div>
+            <div class="col-sm-1"></div>
         </div>
-        <br>
-        <h4 style="text-align:center;">
-          Click on a legend to toggle visibility of the associated graph
-        </h4>
     </div>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.4.0/Chart.min.js"></script>
     <script>
@@ -61,10 +61,26 @@
                         data: [5.537504, 5.757247, 13.23616, 9.937504, 2.431584, 7.085216],
                         fill: false,
                     },
+                    {
+                        label: "ACSR on GTX 860M",
+                        borderColor: 'rgb(204, 55, 199)',
+                        data: [12.913888, 14.3479, 33.904636, 22.806561, 5.374912, 18.0414],
+                        fill: false,
+                    },
+                    {
+                        label: "Data from Paper (ACSR on GTX Titan)",
+                        borderColor: 'rgb(255, 148, 0)',
+                        data: [0.8,3.0,7.9,1.5,0.4,1.9],
+                        fill: false,
+                    },
+
                   ]
                 },
                 // Configuration options go here
                 options: {
+                    legend:{
+                      position : 'left',
+                    },
                     scales: {
                         xAxes: [{
                             display: true,
