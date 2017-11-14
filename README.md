@@ -21,7 +21,7 @@ SpMV is also implemented using `cuSparse` library for comparision with ACSR.
 The values recorde are : <br/>
 **Insert recorded values table**<br/><br/>
 
-Graphs plotted for the above recorded values can be found here : [Graphs Page](Observations/graphs.html)
+Graphs plotted for the above recorded values can be found here : [Graphs Page](http://htmlpreview.github.io/?https://github.com/aneesh297/Sparse-Matrix-Vector-Multiplication/blob/master/Observations/graphs.html)
 
 ## Datasets
 Datasets can be found here: https://sparse.tamu.edu/
