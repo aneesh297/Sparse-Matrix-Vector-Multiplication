@@ -69,6 +69,10 @@ static void conv(int &nnz, int &row_length, int &column_length, int &nnz_max,
 	cin>>d;
 	d = "datasets/" + d + ".mtx";
 	std::ifstream fin(d.c_str());
+	if(!fin){
+		cout<<"File Not found\n";
+		exit(0);
+	}
 
 	//int row_length, column_length, nnz;
 
