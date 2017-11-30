@@ -113,11 +113,12 @@ int main(){
 
 
     // Parallel SpMV //
+    ////////////////////////////
     dim3 dimBlock(BLOCK_SIZE,1,1);
     dim3 dimGrid_1((m-1)/BLOCK_SIZE + 1,1,1);
     dim3 dimGrid_2((m-1)/32 + 1,1,1);
 
-
+    // Calling one thread per row kernel
     cudaEventRecord(start);
     parallel_spmv_1<<<dimGrid_1,dimBlock>>> (d_values, d_col_idx, d_row_off, d_vect, d_res, m, n, nnz);
     cudaEventRecord(stop);
@@ -125,12 +126,11 @@ int main(){
     float gpu_time_1 = 0;
     cudaEventElapsedTime(&gpu_time_1, start, stop);
 
-
+    // calling one warp per row kernel
     cudaEventRecord(start);
     parallel_spmv_2<<<dimGrid_2,dimBlock>>> (d_values, d_col_idx, d_row_off, d_vect, d_res, m, n, nnz);
     cudaEventRecord(stop);
     cudaEventSynchronize(stop);
-
     float gpu_time_2 = 0;
     cudaEventElapsedTime(&gpu_time_2, start, stop);
     ////////////////////////////
