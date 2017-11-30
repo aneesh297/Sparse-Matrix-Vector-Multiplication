@@ -1,5 +1,6 @@
 #include "io.h"
 #include "utilities.h"
+#include <math.h>
 
 #define BLOCK_SIZE 1024
 
@@ -58,6 +59,46 @@ void parallel_spmv_2(float * values, int * col_idx, int * row_off, float * vect,
 }
 ////////////////////////////
 
+// Parallel SpMV with Average threads per row
+__global__
+void parallel_spmv_3(float * values, int * col_idx, int * row_off, float * vect, float * res, 
+    int m, int n, int nnz, int threads_per_row){
+    
+    int thread_id = blockDim.x * blockIdx.x + threadIdx.x;
+    int vector_id = thread_id / threads_per_row;
+    int lane_id = thread_id % threads_per_row;
+
+    int row = vector_id;
+
+    if(row < m){
+        int begin_index = row_off[row];
+        int end_index = row_off[row+1];
+
+        float thread_sum = 0.0;
+        for(int i = begin_index + lane_id; i < end_index; i+=threads_per_row)
+            thread_sum += values[i] * vect[col_idx[i]];
+
+        int temp = threads_per_row/2;
+        while(temp >= 1){
+            thread_sum += __shfl_down(thread_sum, temp);
+            temp/=2;
+        }
+
+        if(lane_id == 0)
+            res[row] = thread_sum;
+
+    }
+}
+////////////////////////////
+
+
+// Utility function to calculate thread_per_row for parallel_spmv_3 //
+int nearest_pow_2(float n){
+    int lg = (int)log2(n);
+    return (int)pow(2,lg);
+}
+////////////////////////////
+
 
 int main(){
 
@@ -68,17 +109,18 @@ int main(){
     ////////////////////////////
 
     // Reading Dataset //
-    int m,n,nnz,nnz_max;
+    int m,n,nnz,nnz_max,nnz_avg;
 
-    conv(nnz,m,n,nnz_max,false);  // Defined in io.h
+    conv(nnz,m,n,nnz_max,nnz_avg);  // Defined in io.h
 
     cout<<"\nrows    = "<<m;
     cout<<"\ncolumns = "<<n;
     cout<<"\nnnz     = "<<nnz;
     cout<<"\nnnz_max = "<<nnz_max;
+    cout<<"\nnnz_avg = "<<nnz_avg;
     cout<<"\n\n";
 
-    float *vect = vect_gen(n,false); //generating dense vector
+    float *vect = vect_gen(n); //generating dense vector
     ////////////////////////////
 
 
@@ -117,6 +159,8 @@ int main(){
     dim3 dimBlock(BLOCK_SIZE,1,1);
     dim3 dimGrid_1((m-1)/BLOCK_SIZE + 1,1,1);
     dim3 dimGrid_2((m-1)/32 + 1,1,1);
+    int threads_per_row = min(32, nearest_pow_2(nnz_avg));
+    dim3 dimGrid_3((m-1)/(1024/threads_per_row)+1, 1, 1);
 
     // Calling one thread per row kernel
     cudaEventRecord(start);
@@ -133,6 +177,15 @@ int main(){
     cudaEventSynchronize(stop);
     float gpu_time_2 = 0;
     cudaEventElapsedTime(&gpu_time_2, start, stop);
+
+    // calling avg threads per row
+    cudaEventRecord(start);
+    parallel_spmv_3<<<dimGrid_3,dimBlock>>> (d_values, d_col_idx, d_row_off, d_vect, d_res, m, n, nnz, threads_per_row);
+    cudaEventRecord(stop);
+    cudaEventSynchronize(stop);
+    float gpu_time_3 = 0;
+    cudaEventElapsedTime(&gpu_time_3, start, stop);
+
     ////////////////////////////
 
 
@@ -157,6 +210,8 @@ int main(){
     cout<<"\n\nCPU Execution time                  = "<<cpu_time<<" ms";
     cout<<"\n\nGPU Execution time - Thread per Row = "<<gpu_time_1<<" ms";
     cout<<"\n\nGPU Execution time - Warp per Row   = "<<gpu_time_2<<" ms";
+    cout<<"\n\n\nThreads per row in avrg per row     = "<<threads_per_row;
+    cout<<"\nGPU Execution time - Avrg per Row   = "<<gpu_time_3<<" ms";
     cout<<"\n\n";
     ////////////////////////////
 }
