@@ -30,7 +30,31 @@ void parallel_spmv_1(float * values, int * col_idx, int * row_off, float * vect,
 __global__
 void parallel_spmv_2(float * values, int * col_idx, int * row_off, float * vect, float * res, 
     int m, int n, int nnz){
+    
+    int thread_id = blockDim.x * blockIdx.x + threadIdx.x;
+    int warp_id = thread_id / 32;
+    int lane_id = thread_id % 32;
 
+    int row = warp_id;
+
+    if(row < m){
+        int begin_index = row_off[row];
+        int end_index = row_off[row+1];
+
+        float thread_sum = 0.0;
+        for(int i = begin_index + lane_id; i < end_index; i+=32)
+            thread_sum += values[i] * vect[col_idx[i]];
+        
+        thread_sum += __shfl_down(thread_sum,16);
+        thread_sum += __shfl_down(thread_sum,8);
+        thread_sum += __shfl_down(thread_sum,4);
+        thread_sum += __shfl_down(thread_sum,2);
+        thread_sum += __shfl_down(thread_sum,1);
+
+        if(lane_id == 0)
+            res[row] = thread_sum;
+        
+    }
 }
 ////////////////////////////
 
@@ -90,15 +114,25 @@ int main(){
 
     // Parallel SpMV //
     dim3 dimBlock(BLOCK_SIZE,1,1);
-    dim3 dimGrid((m-1)/BLOCK_SIZE + 1,1,1);
+    dim3 dimGrid_1((m-1)/BLOCK_SIZE + 1,1,1);
+    dim3 dimGrid_2((m-1)/32 + 1,1,1);
+
 
     cudaEventRecord(start);
-    parallel_spmv_1<<<dimGrid,dimBlock>>> (d_values, d_col_idx, d_row_off, d_vect, d_res, m, n, nnz);
+    parallel_spmv_1<<<dimGrid_1,dimBlock>>> (d_values, d_col_idx, d_row_off, d_vect, d_res, m, n, nnz);
+    cudaEventRecord(stop);
+    cudaEventSynchronize(stop);
+    float gpu_time_1 = 0;
+    cudaEventElapsedTime(&gpu_time_1, start, stop);
+
+
+    cudaEventRecord(start);
+    parallel_spmv_2<<<dimGrid_2,dimBlock>>> (d_values, d_col_idx, d_row_off, d_vect, d_res, m, n, nnz);
     cudaEventRecord(stop);
     cudaEventSynchronize(stop);
 
-    float gpu_time = 0;
-    cudaEventElapsedTime(&gpu_time, start, stop);
+    float gpu_time_2 = 0;
+    cudaEventElapsedTime(&gpu_time_2, start, stop);
     ////////////////////////////
 
 
@@ -120,8 +154,9 @@ int main(){
     ////////////////////////////
 
     // Print Statistics //
-    cout<<"\n\nCPU Execution time = "<<cpu_time;
-    cout<<"\n\nGPU Execution time = "<<gpu_time;
+    cout<<"\n\nCPU Execution time                  = "<<cpu_time<<" ms";
+    cout<<"\n\nGPU Execution time - Thread per Row = "<<gpu_time_1<<" ms";
+    cout<<"\n\nGPU Execution time - Warp per Row   = "<<gpu_time_2<<" ms";
     cout<<"\n\n";
     ////////////////////////////
 }
