@@ -61,7 +61,8 @@ void coo2csr(int row_length, int nnz, float *values, int *row, int *col,
 
 }
 
-static void conv(int &nnz, int &row_length, int &column_length, int &nnz_max)
+static void conv(int &nnz, int &row_length, int &column_length, int &nnz_max, 
+	bool isData = false)
 {
 	cout<<"Enter dataset name : ";
 	string d;
@@ -95,11 +96,17 @@ static void conv(int &nnz, int &row_length, int &column_length, int &nnz_max)
 	{
 		int m, n;
 		float data;
-		fin >> m >> n;// >> data;
+		if(!isData)
+			fin >> m >> n;// >> data;
+		else
+			fin >> m >> n>> data;
 
 		row[l] = m;
 		column[l] = n;
-		coovalues[l] = rand()%10 + 1;
+		if(!isData)
+			coovalues[l] = rand()%10 + 1;
+		else
+			coovalues[l] = data;
 	}
 
 	coo2csr(row_length, nnz, coovalues, row, column, values, col_idx, row_off);

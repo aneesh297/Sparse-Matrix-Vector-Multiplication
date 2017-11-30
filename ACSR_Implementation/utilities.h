@@ -36,13 +36,16 @@ float * sparse_gen(int n, int &nnz, int &nnz_row, int &nnz_max)
 }
 
 //Generates the dense vector required for multiplication
-float *vect_gen(int n)
+float *vect_gen(int n, bool isSerial = false)
 {
  float *vect = new float[n];
 
  for(int i = 0; i < n; i++)
  {
-   vect[i] = rand()%10;
+   if(!isSerial)
+    vect[i] = rand()%10;
+  else
+    vect[i] = i+1;
  }
 
  return vect;
@@ -108,7 +111,7 @@ int checker(float *arr1, float *arr2, int size)
 	{
 		err = abs(arr1[i] - arr2[i]);
 		if(err > 0.1){
-      if(count>100)
+      if(count<10)
       {
         cout<<"Incorrect ";
         cout<<arr1[i]<<" "<<arr2[i]<<" "<<err<<" "<<i<<endl;
