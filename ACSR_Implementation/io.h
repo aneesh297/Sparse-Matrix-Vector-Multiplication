@@ -63,7 +63,7 @@ void coo2csr(int row_length, int nnz, float *values, int *row, int *col,
 
 int dummy_var = 0;
 static void conv(int &nnz, int &row_length, int &column_length, int &nnz_max, 
-	int &nnz_avg = dummy_var, bool isData = false)
+	int &nnz_avg = dummy_var, int &nnz_dev = dummy_var,bool isData = false)
 {
 	cout<<"Enter dataset name : ";
 	string d;
@@ -118,19 +118,24 @@ static void conv(int &nnz, int &row_length, int &column_length, int &nnz_max,
 
 	nnz_max = 0;
 
-	int tot_nnz = 0;
+	int tot_nnz = 0, tot_nnz_square = 0;
 	for(int i = 0;i < -1 + row_length; i++)
 	{
-		tot_nnz += row_off[i+1]-row_off[i];
-		if((row_off[i+1] - row_off[i]) > nnz_max)
-			nnz_max = (row_off[i+1] - row_off[i]);
+		int cur_nnz = row_off[i+1] - row_off[i];
+		tot_nnz += cur_nnz;
+		tot_nnz_square += cur_nnz * cur_nnz;
+		if(cur_nnz > nnz_max)
+			nnz_max = cur_nnz;
 	}
 
 	tot_nnz += nnz-row_off[row_length-1];
+	tot_nnz_square += (nnz-row_off[row_length-1]);
+
 	if((nnz - row_off[row_length-1]) > nnz_max)
 		nnz_max = nnz - row_off[row_length-1];
 
 	nnz_avg = tot_nnz / row_length;
+	nnz_dev = (int)sqrt(tot_nnz_square/row_length - (nnz_avg*nnz_avg));
 
 	row_off[row_length] = nnz;
 

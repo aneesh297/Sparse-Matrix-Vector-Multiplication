@@ -109,15 +109,16 @@ int main(){
     ////////////////////////////
 
     // Reading Dataset //
-    int m,n,nnz,nnz_max,nnz_avg;
+    int m,n,nnz,nnz_max,nnz_avg,nnz_dev;
 
-    conv(nnz,m,n,nnz_max,nnz_avg);  // Defined in io.h
+    conv(nnz,m,n,nnz_max,nnz_avg,nnz_dev);  // Defined in io.h
 
     cout<<"\nrows    = "<<m;
     cout<<"\ncolumns = "<<n;
     cout<<"\nnnz     = "<<nnz;
     cout<<"\nnnz_max = "<<nnz_max;
     cout<<"\nnnz_avg = "<<nnz_avg;
+    cout<<"\nnnz_dev = "<<nnz_dev;
     cout<<"\n\n";
 
     float *vect = vect_gen(n); //generating dense vector
@@ -178,7 +179,7 @@ int main(){
     float gpu_time_2 = 0;
     cudaEventElapsedTime(&gpu_time_2, start, stop);
 
-    // calling avg threads per row
+    // calling avg threads per row kernel
     cudaEventRecord(start);
     parallel_spmv_3<<<dimGrid_3,dimBlock>>> (d_values, d_col_idx, d_row_off, d_vect, d_res, m, n, nnz, threads_per_row);
     cudaEventRecord(stop);
