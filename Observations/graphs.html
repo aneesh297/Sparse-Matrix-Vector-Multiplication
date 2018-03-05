@@ -50,29 +50,30 @@
                 // The data for our dataset
                 data: {
                     labels: ["amazon-2008", "flickr", "hollywood-2009", "in-2004", "cnr-2000", "eu-2005"],
-                    datasets: [{
-                        label: "Intel i7-4710u",
-                        borderColor: 'rgb(255, 99, 132)',
-                        data: [43.259, 115.659, 525.414, 139.633, 21.911, 156.575],
-                        fill: false,
-                    }, {
-                        label: "ACSR on P100",
-                        borderColor: 'rgb(44, 186, 37)',
-                        data: [5.537504, 5.757247, 13.23616, 9.937504, 2.431584, 7.085216],
-                        fill: false,
-                    },
-                    {
-                        label: "ACSR on GTX 860M",
-                        borderColor: 'rgb(204, 55, 199)',
-                        data: [12.913888, 14.3479, 33.904636, 22.806561, 5.374912, 18.0414],
-                        fill: false,
-                    },
-                    {
-                        label: "Data from Paper (ACSR on GTX TitanX)",
-                        borderColor: 'rgb(255, 148, 0)',
-                        data: [0.8,3.0,7.9,1.5,0.4,1.9],
-                        fill: false,
-                    },
+                    datasets: [
+                    // {
+                    //     label: "Intel i7-4710u",
+                    //     borderColor: 'rgb(255, 99, 132)',
+                    //     data: [43.259, 115.659, 525.414, 139.633, 21.911, 156.575],
+                    //     fill: false,
+                    // }, {
+                    //     label: "ACSR on P100",
+                    //     borderColor: 'rgb(44, 186, 37)',
+                    //     data: [5.537504, 5.757247, 13.23616, 9.937504, 2.431584, 7.085216],
+                    //     fill: false,
+                    // },
+                    // {
+                    //     label: "ACSR on GTX 860M",
+                    //     borderColor: 'rgb(204, 55, 199)',
+                    //     data: [12.913888, 14.3479, 33.904636, 22.806561, 5.374912, 18.0414],
+                    //     fill: false,
+                    // },
+                    // {
+                    //     label: "Data from Paper (ACSR on GTX TitanX)",
+                    //     borderColor: 'rgb(255, 148, 0)',
+                    //     data: [0.8,3.0,7.9,1.5,0.4,1.9],
+                    //     fill: false,
+                    // },
 
                     {
                         label: "cuSparse on P100",
@@ -87,26 +88,26 @@
                         data: [3.848, 9.148, 33.473, 8.292, 1.72, 7.98],
                         fill: false,
                     },
-                    {
-                        label: "Algo1 on GTX 860M",
-                        borderColor: 'rgb(255, 125, 96)',
-                        data: [2.18525, 11.1399, 47.3011, 9.96499, 2.2655, 10.691],
-                        fill: false,
-                    },
+                    // {
+                    //     label: "Algo1 on GTX 860M",
+                    //     borderColor: 'rgb(255, 125, 96)',
+                    //     data: [2.18525, 11.1399, 47.3011, 9.96499, 2.2655, 10.691],
+                    //     fill: false,
+                    // },
 
-                    {
-                        label: "Algo2 on GTX 860M",
-                        borderColor: 'rgb(255, 125, 96)',
-                        data: [5.81619, 8.60506, 17.1115, 11.5222, 2.65894, 8.0952],
-                        fill: false,
-                    },
+                    // {
+                    //     label: "Algo2 on GTX 860M",
+                    //     borderColor: 'rgb(255, 125, 96)',
+                    //     data: [5.81619, 8.60506, 17.1115, 11.5222, 2.65894, 8.0952],
+                    //     fill: false,
+                    // },
 
-                    {
-                        label: "Algo3 on GTX 860M",
-                        borderColor: 'rgb(119, 32, 13)',
-                        data: [1.81021, 13.0134, 23.5982, 9.29181, 2.0264, 7.39565],
-                        fill: false,
-                    },
+                    // {
+                    //     label: "Algo3 on GTX 860M",
+                    //     borderColor: 'rgb(119, 32, 13)',
+                    //     data: [1.81021, 13.0134, 23.5982, 9.29181, 2.0264, 7.39565],
+                    //     fill: false,
+                    // },
 
                     {
                         label: "Min(algo1,2 and 3) on GTX 860M",
@@ -115,24 +116,24 @@
                         fill: false,
                     },
 
-                    {
-                        label: "Algo1 on P100",
-                        borderColor: 'rgb(140, 255, 122)',
-                        data: [0.305728, 2.70742, 13.7873, 2.35997, 0.629472, 2.57725],
-                        fill: false,
-                    },
-                    {
-                        label: "Algo2 on P100",
-                        borderColor: 'rgb(57, 155, 41)',
-                        data: [0.608896, 0.90192, 2.06192, 1.23146, 0.294176, 0.884864],
-                        fill: false,
-                    },
-                    {
-                        label: "Algo3 on P100",
-                        borderColor: 'rgb(37, 173, 15)',
-                        data: [0.221856, 1.22141, 2.67466, 1.08694, 0.398816, 0.943488],
-                        fill: false,
-                    },
+                    // {
+                    //     label: "Algo1 on P100",
+                    //     borderColor: 'rgb(140, 255, 122)',
+                    //     data: [0.305728, 2.70742, 13.7873, 2.35997, 0.629472, 2.57725],
+                    //     fill: false,
+                    // },
+                    // {
+                    //     label: "Algo2 on P100",
+                    //     borderColor: 'rgb(57, 155, 41)',
+                    //     data: [0.608896, 0.90192, 2.06192, 1.23146, 0.294176, 0.884864],
+                    //     fill: false,
+                    // },
+                    // {
+                    //     label: "Algo3 on P100",
+                    //     borderColor: 'rgb(37, 173, 15)',
+                    //     data: [0.221856, 1.22141, 2.67466, 1.08694, 0.398816, 0.943488],
+                    //     fill: false,
+                    // },
 
                     {
                         label: "Min(algo1, 2, 3) on P100",
